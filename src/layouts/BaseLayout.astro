@@ -1,0 +1,24 @@
+---
+import "../styles/global.css";
+const { title = "Mountain Greece", description = "Mountain activities in Greece", lang = "de", path = "/" } = Astro.props;
+const base = "https://example.com"; // replace later
+const canonical = `${base}${path}`;
+const altDe = `${base}${path.replace(/^\/(en)/, "/de")}`;
+const altEn = `${base}${path.replace(/^\/(de)/, "/en")}`;
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="de" href={altDe} />
+    <link rel="alternate" hreflang="en" href={altEn} />
+    <link rel="alternate" hreflang="x-default" href={`${base}/de/`} />
+  </head>
+  <body class="bg-cream text-text font-body">
+    <slot />
+  </body>
+</html>

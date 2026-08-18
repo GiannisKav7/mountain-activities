@@ -1,0 +1,16 @@
+---
+const { lang = "de" } = Astro.props;
+const isDe = lang === "de";
+---
+<header class="sticky top-0 z-50 bg-cream/90 backdrop-blur border-b border-stone/20">
+  <nav class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+    <a href={isDe ? "/de/" : "/en/"} class="font-heading text-xl text-forest">Mountain Greece</a>
+    <div class="flex gap-4 text-sm">
+      <a href={isDe ? "/de/packages" : "/en/packages"}>Packages</a>
+      <a href={isDe ? "/de/why-greece" : "/en/why-greece"}>Why Greece</a>
+      <a href={isDe ? "/de/practical-info" : "/en/practical-info"}>Practical Info</a>
+      <a href={isDe ? "/de/contact" : "/en/contact"} class="btn btn-sm bg-forest text-white border-none">Contact</a>
+      <a href={isDe ? "/en/" : "/de/"} class="underline">{isDe ? "EN" : "DE"}</a>
+    </div>
+  </nav>
+</header>
