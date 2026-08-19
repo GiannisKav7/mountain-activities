@@ -1,0 +1,57 @@
+@plugin "daisyui" {
+  themes: light --default, dark;
+}
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "Merriweather", Georgia, serif;
+  --font-mono: "JetBrains Mono", Monaco, monospace;
+
+  /* Primary: Mediterranean Sea Blue (inspiring, trustworthy for Germans) */
+  --color-primary-50: #ecf4f9;
+  --color-primary-100: #c9e1f0;
+  --color-primary-200: #a6cee7;
+  --color-primary-300: #5fa5d3;
+  --color-primary-400: #1f7fc4;
+  --color-primary-500: #1565a0; /* Deep Mediterranean blue */
+  --color-primary-600: #0d4a7e;
+  --color-primary-700: #082e5c;
+  --color-primary-800: #051a3a;
+  --color-primary-900: #021118;
+
+  /* Secondary: Warm Terracotta (earth, hiking, Mediterranean terrain) */
+  --color-secondary-50: #fef6f1;
+  --color-secondary-100: #fce4d2;
+  --color-secondary-200: #f9d1b3;
+  --color-secondary-300: #f5ae84;
+  --color-secondary-400: #d97f3a; /* Warm terracotta */
+  --color-secondary-500: #c97f4a; /* Primary warm accent */
+  --color-secondary-600: #a3632f;
+  --color-secondary-700: #7d4924;
+  --color-secondary-800: #572f18;
+  --color-secondary-900: #311809;
+
+  /* Accent: Olive Green (nature, sustainability, hiking culture) */
+  --color-accent-50: #f5f8f2;
+  --color-accent-100: #e1ead4;
+  --color-accent-200: #cddcb6;
+  --color-accent-300: #b8c898;
+  --color-accent-400: #8fa872;
+  --color-accent-500: #71896a; /* Olive green */
+  --color-accent-600: #556850;
+  --color-accent-700: #3f4d3a;
+  --color-accent-800: #293225;
+  --color-accent-900: #131810;
+
+  /* Neutral: Cool grays (German precision, clean design) */
+  --color-neutral-50: #f8f9fa;
+  --color-neutral-100: #e9ecef;
+  --color-neutral-200: #dee2e6;
+  --color-neutral-300: #ced4da;
+  --color-neutral-400: #adb5bd;
+  --color-neutral-500: #6c757d;
+  --color-neutral-600: #495057;
+  --color-neutral-700: #343a40;
+  --color-neutral-800: #212529;
+  --color-neutral-900: #0d0e10;
+}

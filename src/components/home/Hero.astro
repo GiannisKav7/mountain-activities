@@ -1,0 +1,49 @@
+---
+import { dict } from "../../i18n";
+
+const { lang = "de" } = Astro.props;
+const t = dict[lang].home.hero;
+const isDe = lang === "de";
+---
+<section class="relative overflow-hidden bg-gradient-to-b from-primary-50 via-accent-50/60 to-base-100">
+  <div class="absolute inset-0 text-secondary-300/60" aria-hidden="true">
+    <svg class="absolute bottom-0 left-0 w-full h-44" viewBox="0 0 1440 220" preserveAspectRatio="none" fill="currentColor">
+      <path d="M0 220 260 90 430 170 640 40 850 160 1040 100 1270 190 1440 120 V220 Z" />
+      <path d="M0 220 200 160 380 210 560 130 780 200 980 160 1180 210 1440 180 V220 Z" opacity="0.6" />
+    </svg>
+  </div>
+  <div class="relative max-w-4xl mx-auto px-4 pt-20 pb-24 md:pt-28 md:pb-32 text-center">
+    <span class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary-700 bg-accent-100 rounded-full px-4 py-1.5 border border-accent-200">
+      <span class="inline-block h-1.5 w-1.5 rounded-full bg-secondary-500"></span>
+      {t.kicker}
+    </span>
+    <h1 class="mt-6 font-serif text-4xl md:text-6xl font-bold text-primary-900 leading-tight">{t.title}</h1>
+    <p class="mt-6 text-lg md:text-xl text-neutral-600 max-w-2xl mx-auto leading-relaxed">{t.subtitle}</p>
+    <div class="mt-9 flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a
+        href={isDe ? "/de/packages" : "/en/packages"}
+        class="inline-flex items-center justify-center gap-2 bg-secondary-600 text-white font-semibold rounded-full px-8 py-3.5 hover:bg-secondary-700 transition-colors shadow-md shadow-secondary-600/30"
+      >
+        {t.ctaPrimary}
+      </a>
+      <a
+        href={isDe ? "/de/contact" : "/en/contact"}
+        class="inline-flex items-center justify-center gap-2 border border-primary-400 text-primary-700 font-semibold rounded-full px-8 py-3.5 hover:bg-primary-50 transition-colors"
+      >
+        {t.ctaSecondary}
+      </a>
+    </div>
+    <div class="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+      {
+        t.stats.map((s, i) => (
+          <div class="bg-base-100 rounded-2xl shadow-sm border border-neutral-100 px-6 py-5">
+            <div class={`font-mono text-3xl font-bold ${i % 3 === 0 ? "text-primary-700" : i % 3 === 1 ? "text-secondary-600" : "text-accent-600"}`}>
+              {s.value}
+            </div>
+            <div class="mt-1 text-xs uppercase tracking-widest text-neutral-500">{s.label}</div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
