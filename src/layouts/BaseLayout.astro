@@ -13,12 +13,16 @@ const altEn = `${base}${path.replace(/^\/(de)/, "/en")}`;
     <meta name="viewport" content="width=device-width" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={canonical} />
     <link rel="alternate" hreflang="de" href={altDe} />
     <link rel="alternate" hreflang="en" href={altEn} />
     <link rel="alternate" hreflang="x-default" href={`${base}/de/`} />
   </head>
-  <body class="bg-cream text-text font-body">
+  <body class="bg-base-100 text-base-content font-sans antialiased">
+    <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-primary-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg">
+      {lang === "de" ? "Zum Inhalt springen" : "Skip to content"}
+    </a>
     <slot />
   </body>
 </html>
