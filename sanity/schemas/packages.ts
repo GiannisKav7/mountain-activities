@@ -18,7 +18,7 @@ export default defineType({
       name: "specs",
       type: "object",
       fields: [
-        { name: "duration", type: "string" },
+        { name: "duration", type: "object", fields: [{ name: "de", type: "string" }, { name: "en", type: "string" }] },
         { name: "accommodation", type: "object", fields: [{ name: "de", type: "string" }, { name: "en", type: "string" }] },
         { name: "difficultyRating", type: "number" },
         { name: "activityType", type: "object", fields: [{ name: "de", type: "string" }, { name: "en", type: "string" }] },

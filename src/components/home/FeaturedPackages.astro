@@ -12,7 +12,7 @@ function toCard(p: any, lang: string): PackageCard {
     title: pick(p.title),
     summary: pick(p.summary),
     image: "",
-    duration: p.specs?.duration ?? "",
+    duration: pick(p.specs?.duration),
     accommodation: pick(p.specs?.accommodation),
     activityType: pick(p.specs?.activityType),
     difficulty: p.specs?.difficultyRating ?? 1,
