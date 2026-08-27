@@ -1,7 +1,9 @@
 import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
 import packageSchema from "./sanity/schemas/packages";
+import pageSchema from "./sanity/schemas/page";
 import siteContentSchema from "./sanity/schemas/siteContent";
+import siteSettingsSchema from "./sanity/schemas/siteSettings";
 
 export default defineConfig({
   name: "default",
@@ -10,6 +12,6 @@ export default defineConfig({
   dataset: "production",
   plugins: [structureTool()],
   schema: {
-    types: [packageSchema, siteContentSchema],
+    types: [siteSettingsSchema, siteContentSchema, pageSchema, packageSchema],
   },
 });

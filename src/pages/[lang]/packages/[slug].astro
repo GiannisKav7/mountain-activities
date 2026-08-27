@@ -1,0 +1,238 @@
+---
+// Generates bilingual package detail pages:
+//   /de/packages/menalo-trekking/
+//   /en/packages/menalo-trekking/  etc.
+import type { GetStaticPaths } from "astro";
+import type { Lang } from "../../../lib/routes";
+import type { SanityPackage } from "../../../lib/sanityTypes";
+import { fetchPackageBySlug, safeFetch, urlFor, q } from "../../../lib/sanity";
+import { getPagePath } from "../../../lib/routes";
+import SiteLayout from "../../../layouts/SiteLayout.astro";
+
+export const getStaticPaths = (async () => {
+  const slugs = await safeFetch<Array<{ slug: string }>>(q.allPackageSlugs) ?? [];
+  const languages: Lang[] = ["de", "en"];
+  return languages.flatMap((lang) =>
+    slugs.map(({ slug }) => ({
+      params: { lang, slug },
+      props: { lang, packageSlug: slug },
+    })),
+  );
+}) satisfies GetStaticPaths;
+
+interface Props {
+  lang: Lang;
+  packageSlug: string;
+}
+
+const { lang, packageSlug } = Astro.props;
+
+const pkg = await fetchPackageBySlug(packageSlug);
+
+const pick = (obj?: { de?: string; en?: string } | null): string =>
+  (obj?.[lang] ?? obj?.de) ?? "";
+
+const title = pick(pkg?.seoTitle) || pick(pkg?.title) || "Package | OLVIOS";
+const description = pick(pkg?.seoDescription) || pick(pkg?.summary) || "";
+const heroImageUrl = pkg?.heroImage ? urlFor(pkg.heroImage).width(1600).url() : "";
+const maxDifficulty = 5;
+
+const path = `/${lang}/packages/${packageSlug}/`;
+const alternatePaths: Record<Lang, string> = {
+  de: `/de/packages/${packageSlug}/`,
+  en: `/en/packages/${packageSlug}/`,
+};
+---
+
+<SiteLayout lang={lang} title={title} description={description} path={path} alternatePaths={alternatePaths}>
+  {pkg ? (
+    <article>
+
+      {/* ── Hero ──────────────────────────────────────────────────── */}
+      <header class="relative isolate overflow-hidden bg-primary-900 text-white">
+        {heroImageUrl && (
+          <img
+            src={heroImageUrl}
+            alt={pick(pkg.title)}
+            class="absolute inset-0 h-full w-full object-cover opacity-40"
+          />
+        )}
+        <div class="relative mx-auto max-w-7xl px-5 pb-16 pt-24 md:px-8 md:pb-24 md:pt-32">
+          <a
+            href={getPagePath(lang, "activities")}
+            class="mb-8 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary-300 hover:text-white"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            </svg>
+            {lang === "de" ? "Alle Aktivitäten" : "All activities"}
+          </a>
+          <h1 class="font-serif text-4xl font-bold leading-tight text-white md:text-6xl">
+            {pick(pkg.title)}
+          </h1>
+          <p class="mt-6 max-w-3xl text-lg leading-relaxed text-primary-100 md:text-xl">
+            {pick(pkg.summary)}
+          </p>
+
+          {/* Specs bar */}
+          {pkg.specs && (
+            <div class="mt-10 flex flex-wrap gap-6 text-sm text-primary-200">
+              {pkg.specs.duration && (
+                <div>
+                  <span class="block text-xs uppercase tracking-widest text-primary-400">
+                    {lang === "de" ? "Dauer" : "Duration"}
+                  </span>
+                  <span class="mt-1 block font-semibold text-white">{pick(pkg.specs.duration)}</span>
+                </div>
+              )}
+              {pkg.specs.accommodation && (
+                <div>
+                  <span class="block text-xs uppercase tracking-widest text-primary-400">
+                    {lang === "de" ? "Unterkunft" : "Accommodation"}
+                  </span>
+                  <span class="mt-1 block font-semibold text-white">{pick(pkg.specs.accommodation)}</span>
+                </div>
+              )}
+              {pkg.specs.activityType && (
+                <div>
+                  <span class="block text-xs uppercase tracking-widest text-primary-400">
+                    {lang === "de" ? "Aktivität" : "Activity"}
+                  </span>
+                  <span class="mt-1 block font-semibold text-white">{pick(pkg.specs.activityType)}</span>
+                </div>
+              )}
+              {pkg.specs.difficultyRating !== undefined && (
+                <div>
+                  <span class="block text-xs uppercase tracking-widest text-primary-400">
+                    {lang === "de" ? "Schwierigkeit" : "Difficulty"}
+                  </span>
+                  <span class="mt-1 flex gap-0.5">
+                    {Array.from({ length: maxDifficulty }).map((_, i) => (
+                      <span class={`h-2.5 w-2.5 rounded-full ${i < (pkg.specs?.difficultyRating ?? 0) ? "bg-secondary-400" : "bg-primary-700"}`} />
+                    ))}
+                  </span>
+                </div>
+              )}
+              {pkg.specs.priceFrom && (
+                <div class="ml-auto">
+                  <span class="block text-xs uppercase tracking-widest text-primary-400">
+                    {lang === "de" ? "Preis ab" : "Price from"}
+                  </span>
+                  <span class="mt-1 block font-mono text-2xl font-bold text-white">
+                    €{pkg.specs.priceFrom}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </header>
+
+      <div class="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-24 space-y-20">
+
+        {/* ── Itinerary ──────────────────────────────────────────── */}
+        {pkg.itinerary && pkg.itinerary.length > 0 && (
+          <section>
+            <h2 class="font-serif text-3xl font-bold text-primary-900 md:text-4xl">
+              {lang === "de" ? "Reiseroute" : "Itinerary"}
+            </h2>
+            <ol class="mt-8 grid list-none gap-0 border-y border-neutral-200 p-0">
+              {pkg.itinerary.map((day) => (
+                <li class="grid gap-3 border-b border-neutral-200 py-7 last:border-b-0 md:grid-cols-[5rem_1fr] md:items-start">
+                  <span class="font-mono text-xs font-bold text-secondary-500">
+                    {lang === "de" ? "Tag" : "Day"} {day.day}
+                  </span>
+                  <div>
+                    <h3 class="font-serif text-xl font-bold text-primary-900">{pick(day.title)}</h3>
+                    <p class="mt-2 text-neutral-600">{pick(day.description)}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
+        {/* ── Included / Not included ───────────────────────────── */}
+        {((pkg.included && pkg.included.length > 0) || (pkg.notIncluded && pkg.notIncluded.length > 0)) && (
+          <section class="grid gap-8 md:grid-cols-2">
+            {pkg.included && pkg.included.length > 0 && (
+              <div>
+                <h2 class="font-serif text-2xl font-bold text-primary-900">
+                  {lang === "de" ? "Im Preis enthalten" : "Included"}
+                </h2>
+                <ul class="mt-5 grid gap-2">
+                  {pkg.included.map((item) => (
+                    <li class="flex items-start gap-3 text-neutral-700">
+                      <span class="mt-0.5 h-5 w-5 shrink-0 rounded-full bg-accent-100 flex items-center justify-center text-accent-700 text-xs font-bold">✓</span>
+                      {pick(item)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {pkg.notIncluded && pkg.notIncluded.length > 0 && (
+              <div>
+                <h2 class="font-serif text-2xl font-bold text-primary-900">
+                  {lang === "de" ? "Nicht enthalten" : "Not included"}
+                </h2>
+                <ul class="mt-5 grid gap-2">
+                  {pkg.notIncluded.map((item) => (
+                    <li class="flex items-start gap-3 text-neutral-500">
+                      <span class="mt-0.5 h-5 w-5 shrink-0 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 text-xs">–</span>
+                      {pick(item)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ── Gallery ────────────────────────────────────────────── */}
+        {pkg.gallery && pkg.gallery.length > 0 && (
+          <section>
+            <h2 class="font-serif text-3xl font-bold text-primary-900 md:text-4xl">
+              {lang === "de" ? "Impressionen" : "Gallery"}
+            </h2>
+            <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {pkg.gallery.map((item) => item.image && (
+                <div class="overflow-hidden rounded-2xl">
+                  <img
+                    src={urlFor(item.image).width(800).url()}
+                    alt={pick(item.alt)}
+                    class="w-full h-64 object-cover hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── CTA ─────────────────────────────────────────────────── */}
+        <section class="rounded-3xl bg-secondary-700 px-6 py-12 text-white md:px-12 md:py-16">
+          <h2 class="font-serif text-3xl font-bold md:text-4xl">
+            {lang === "de" ? "Interesse an diesem Paket?" : "Interested in this package?"}
+          </h2>
+          <p class="mt-4 max-w-2xl text-lg text-secondary-100">
+            {lang === "de"
+              ? "Kontaktieren Sie uns für ein unverbindliches Angebot."
+              : "Get in touch for a no-obligation proposal."}
+          </p>
+          <a
+            href={getPagePath(lang, "contact")}
+            class="mt-8 inline-flex items-center rounded-full bg-white px-6 py-3 text-sm font-bold text-secondary-800 hover:-translate-y-0.5 transition-transform"
+          >
+            {lang === "de" ? "Anfrage senden" : "Send enquiry"}
+            <span class="ml-2" aria-hidden="true">&rarr;</span>
+          </a>
+        </section>
+
+      </div>
+    </article>
+  ) : (
+    <div class="max-w-7xl mx-auto px-5 py-24 text-center text-neutral-400">
+      {lang === "de" ? "Paket nicht gefunden." : "Package not found."}
+    </div>
+  )}
+</SiteLayout>

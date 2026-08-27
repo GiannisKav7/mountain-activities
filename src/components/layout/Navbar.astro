@@ -1,43 +1,101 @@
 ---
-import { dict } from "../../i18n";
+import type { Lang } from "../../lib/routes";
+import type { SanitySiteContent, SanitySettings } from "../../lib/sanityTypes";
+import {
+  getHomePath,
+  getLanguageSwitchPath,
+  getPagePath,
+  primaryNavigation,
+  type PageId,
+} from "../../lib/routes";
 
-const { lang = "de" } = Astro.props;
-const t = dict[lang].nav;
-const isDe = lang === "de";
-const links = [
-  { label: t.packages, href: isDe ? "/de/packages" : "/en/packages" },
-  { label: t.whyGreece, href: isDe ? "/de/why-greece" : "/en/why-greece" },
-  { label: t.practicalInfo, href: isDe ? "/de/contact" : "/en/contact" },
-];
+interface Props {
+  lang?: Lang;
+  nav?: SanitySiteContent["navigation"];
+  brand?: Pick<SanitySettings, "brandName" | "tagline"> | null;
+}
+
+const { lang = "de", nav, brand } = Astro.props;
+
+// Pick the right language value, falling back to German if a translation is missing.
+const pick = (obj?: { de?: string; en?: string } | null): string =>
+  (obj?.[lang] ?? obj?.de) ?? "";
+
+const brandName = brand?.brandName ?? "OLVIOS";
+const tagline = pick(brand?.tagline) || "Outdoor Activities";
+
+// Build nav link labels from Sanity, falling back to the pageId key
+const navLabels: Record<string, string> = {
+  activities: pick(nav?.activities) || "Activities",
+  region: pick(nav?.region) || "The Region",
+  about: pick(nav?.about) || "About",
+  practicalInformation: pick(nav?.practicalInformation) || "Practical Information",
+  contact: pick(nav?.contact) || "Contact",
+};
+
+const links = primaryNavigation.map((pageId: PageId) => ({
+  label: navLabels[pageId],
+  href: getPagePath(lang, pageId),
+}));
+
+const contactHref = getPagePath(lang, "contact");
+
+// Language switcher: flips the language prefix while keeping the same page path
+const switchHref = getLanguageSwitchPath(Astro.url.pathname, lang);
+
+const normalizePath = (p: string) => `${p.replace(/\/$/, "")}/`;
+const currentPath = normalizePath(Astro.url.pathname);
 ---
 <header class="sticky top-0 z-50 bg-base-100/90 backdrop-blur border-b border-neutral-200 shadow-sm">
-  <nav class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between" aria-label="Main">
-    <a href={isDe ? "/de/" : "/en/"} class="font-serif text-2xl font-bold text-primary-700 tracking-tight">
-      Mountain Greece
+  <nav
+    class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4"
+    aria-label={lang === "de" ? "Hauptnavigation" : "Main navigation"}
+  >
+    <a
+      href={getHomePath(lang)}
+      class="shrink-0 font-serif text-xl font-bold text-primary-800 tracking-tight lg:text-2xl"
+    >
+      {brandName}
+      <span class="hidden text-xs font-sans font-semibold uppercase tracking-[0.16em] text-neutral-500 xl:inline">
+        {tagline}
+      </span>
     </a>
-    <div class="hidden md:flex items-center gap-7 text-sm font-medium text-neutral-600">
+
+    {/* Desktop links */}
+    <div class="hidden lg:flex items-center gap-5 text-sm font-medium text-neutral-600 xl:gap-7">
       {links.map((link) => (
-        <a href={link.href} class="hover:text-primary-700 transition-colors">
+        <a
+          href={link.href}
+          aria-current={currentPath === normalizePath(link.href) ? "page" : undefined}
+          class="whitespace-nowrap hover:text-primary-700 transition-colors aria-[current=page]:text-primary-800 aria-[current=page]:underline aria-[current=page]:decoration-secondary-500 aria-[current=page]:decoration-2 aria-[current=page]:underline-offset-8"
+        >
           {link.label}
         </a>
       ))}
       <a
-        href={isDe ? "/de/contact" : "/en/contact"}
+        href={contactHref}
+        aria-current={currentPath === normalizePath(contactHref) ? "page" : undefined}
         class="btn btn-sm bg-primary-600 text-white border-none rounded-full px-5 hover:bg-primary-700"
       >
-        {t.contact}
+        {navLabels.contact}
       </a>
-      <a href={isDe ? "/en/" : "/de/"} class="text-xs font-semibold uppercase tracking-widest text-neutral-400 hover:text-primary-600 transition-colors">
-        {isDe ? "EN" : "DE"}
+      <a
+        href={switchHref}
+        hreflang={lang === "de" ? "en" : "de"}
+        class="text-xs font-semibold uppercase tracking-widest text-neutral-400 hover:text-primary-600 transition-colors"
+      >
+        {lang === "de" ? "EN" : "DE"}
       </a>
     </div>
+
+    {/* Mobile menu toggle */}
     <button
       id="nav-toggle"
       type="button"
       aria-label="Menu"
       aria-expanded="false"
       aria-controls="nav-menu"
-      class="md:hidden p-2 text-neutral-600 hover:text-primary-700 focus:outline-none"
+      class="lg:hidden p-2 text-neutral-600 hover:text-primary-700 focus:outline-none"
     >
       <svg id="nav-icon-open" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -47,21 +105,31 @@ const links = [
       </svg>
     </button>
   </nav>
-  <div id="nav-menu" class="hidden md:hidden border-t border-neutral-200">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-3 text-sm font-medium text-neutral-600">
+
+  {/* Mobile drawer */}
+  <div id="nav-menu" class="hidden lg:hidden border-t border-neutral-200">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-3 text-sm font-medium text-neutral-600">
       {links.map((link) => (
-        <a href={link.href} class="py-2 hover:text-primary-700 transition-colors">
+        <a
+          href={link.href}
+          aria-current={currentPath === normalizePath(link.href) ? "page" : undefined}
+          class="py-2 hover:text-primary-700 transition-colors aria-[current=page]:font-bold aria-[current=page]:text-primary-800"
+        >
           {link.label}
         </a>
       ))}
       <a
-        href={isDe ? "/de/contact" : "/en/contact"}
+        href={contactHref}
         class="btn btn-sm bg-primary-600 text-white border-none rounded-full px-5 hover:bg-primary-700 w-fit"
       >
-        {t.contact}
+        {navLabels.contact}
       </a>
-      <a href={isDe ? "/en/" : "/de/"} class="py-2 text-xs font-semibold uppercase tracking-widest text-neutral-400 hover:text-primary-600 transition-colors">
-        {isDe ? "EN" : "DE"}
+      <a
+        href={switchHref}
+        hreflang={lang === "de" ? "en" : "de"}
+        class="py-2 text-xs font-semibold uppercase tracking-widest text-neutral-400 hover:text-primary-600 transition-colors"
+      >
+        {lang === "de" ? "EN" : "DE"}
       </a>
     </div>
   </div>
@@ -73,12 +141,14 @@ const links = [
   const iconOpen = document.getElementById("nav-icon-open");
   const iconClose = document.getElementById("nav-icon-close");
 
-  toggle.addEventListener("click", () => {
-    const isOpen = menu.classList.contains("flex");
-    menu.classList.toggle("flex", !isOpen);
-    menu.classList.toggle("hidden", isOpen);
-    iconClose.classList.toggle("hidden", !isOpen);
-    iconOpen.classList.toggle("hidden", isOpen);
-    toggle.setAttribute("aria-expanded", String(!isOpen));
-  });
+  if (toggle && menu && iconOpen && iconClose) {
+    toggle.addEventListener("click", () => {
+      const isOpen = menu.classList.contains("flex");
+      menu.classList.toggle("flex", !isOpen);
+      menu.classList.toggle("hidden", isOpen);
+      iconClose.classList.toggle("hidden", isOpen);
+      iconOpen.classList.toggle("hidden", !isOpen);
+      toggle.setAttribute("aria-expanded", String(!isOpen));
+    });
+  }
 </script>

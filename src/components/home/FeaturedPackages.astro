@@ -1,113 +1,119 @@
 ---
-import { dict } from "../../i18n";
-import { demoPackages, type PackageCard } from "../../lib/demoPackages";
+import type { Lang } from "../../lib/routes";
+import type { SanitySiteContent, SanityPackage } from "../../lib/sanityTypes";
+import { isSanityConfigured, urlFor, q } from "../../lib/sanity";
+import { getPagePath } from "../../lib/routes";
 
-const { lang = "de" } = Astro.props;
-const t = dict[lang].home.packages;
-
-function toCard(p: any, lang: string): PackageCard {
-  const pick = (obj: any) => obj?.[lang] ?? obj?.de ?? "";
-  return {
-    slug: p.slug?.current ?? "",
-    title: pick(p.title),
-    summary: pick(p.summary),
-    image: "",
-    duration: pick(p.specs?.duration),
-    accommodation: pick(p.specs?.accommodation),
-    activityType: pick(p.specs?.activityType),
-    difficulty: p.specs?.difficultyRating ?? 1,
-    priceFrom: p.specs?.priceFrom ?? null,
-  };
+interface Props {
+  lang?: Lang;
+  data?: SanitySiteContent["home"]["packages"];
 }
 
-const hasEnv = !!(import.meta.env.PUBLIC_SANITY_PROJECT_ID && import.meta.env.PUBLIC_SANITY_DATASET);
+const { lang = "de", data } = Astro.props;
 
-let cards: PackageCard[] = [];
+const pick = (obj?: { de?: string; en?: string } | null): string =>
+  (obj?.[lang] ?? obj?.de) ?? "";
 
-if (hasEnv) {
+// Fetch featured packages from Sanity
+let packages: SanityPackage[] = [];
+if (isSanityConfigured()) {
   try {
-    const { sanity, urlFor, q } = await import("../../lib/sanity");
-    const data = await sanity.fetch(q.featuredPackages);
-    cards = (data ?? []).map((p: any) => {
-      const card = toCard(p, lang);
-      if (p.heroImage) card.image = urlFor(p.heroImage).width(800).url();
-      return card;
-    });
+    const { sanity } = await import("../../lib/sanity");
+    packages = (await sanity.fetch(q.featuredPackages)) ?? [];
   } catch {
-    cards = [];
+    // Sanity unreachable — render empty section
   }
 }
 
-if (cards.length === 0) {
-  cards = demoPackages[lang];
-}
-
-const pricePrefix = lang === "de" ? "ab " : "from ";
+const pricePrefix = pick(data?.pricePrefix) || (lang === "de" ? "ab " : "from ");
 const maxDifficulty = 5;
-const isDe = lang === "de";
-const packagesHref = isDe ? "/de/packages" : "/en/packages";
-const detailHref = (slug: string) => (isDe ? `/de/packages/${slug}` : `/en/packages/${slug}`);
+const activitiesHref = getPagePath(lang, "activities");
 ---
-<section class="mt-16">
+
+{/* id="packages" is the anchor target for Hero and Gallery CTAs */}
+<section id="packages" class="mt-16 scroll-mt-28">
   <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
     <div class="max-w-xl">
-      <h2 class="font-serif text-3xl md:text-4xl font-bold text-primary-900">{t.heading}</h2>
-      <p class="mt-3 text-neutral-600">{t.subtitle}</p>
+      <h2 class="font-serif text-3xl md:text-4xl font-bold text-primary-900">
+        {pick(data?.heading)}
+      </h2>
+      <p class="mt-3 text-neutral-600">{pick(data?.subtitle)}</p>
     </div>
     <a
-      href={packagesHref}
+      href={activitiesHref}
       class="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 hover:text-primary-700 whitespace-nowrap"
     >
-      {t.viewAll}
+      {pick(data?.viewAll)}
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
       </svg>
     </a>
   </div>
-  <div class="mt-8 grid gap-6 md:grid-cols-3">
-    {
-      cards.map((card) => (
-        <a
-          href={detailHref(card.slug)}
-          class="group flex flex-col bg-base-100 rounded-2xl overflow-hidden border border-neutral-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all"
-        >
-          {card.image ? (
-            <div class="relative overflow-hidden">
-              <img src={card.image} alt={card.title} class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-              <span class="absolute top-3 left-3 text-xs font-semibold uppercase tracking-wider text-secondary-800 bg-secondary-100 rounded-full px-3 py-1">
-                {card.activityType}
-              </span>
-            </div>
-          ) : (
-            <div class="flex items-center justify-center h-52 bg-gradient-to-br from-primary-50 to-secondary-50">
-              <span class="text-xs uppercase tracking-widest text-secondary-700">{card.activityType}</span>
-            </div>
-          )}
-          <div class="flex flex-col flex-1 p-6">
-            <h3 class="font-serif text-xl font-bold text-primary-900">{card.title}</h3>
-            <p class="mt-2 text-sm leading-relaxed text-neutral-600 flex-1">{card.summary}</p>
-            <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-neutral-500">
-              <span>{card.duration}</span>
-              <span>{card.accommodation}</span>
-            </div>
-            <div class="mt-4 flex items-center justify-between border-t border-neutral-100 pt-4">
-              <div class="flex items-center gap-1.5" title={`${t.difficulty} ${card.difficulty}/${maxDifficulty}`}>
-                <span class="text-xs text-neutral-500">{t.difficulty}</span>
-                <span class="flex gap-0.5">
-                  {
-                    Array.from({ length: maxDifficulty }).map((_, i) => (
-                      <span class={`h-2 w-2 rounded-full ${i < card.difficulty ? "bg-secondary-400" : "bg-neutral-300"}`} />
-                    ))
-                  }
+
+  {packages.length > 0 && (
+    <div class="mt-8 grid gap-6 md:grid-cols-3">
+      {packages.map((pkg) => {
+        const title = pick(pkg.title);
+        const summary = pick(pkg.summary);
+        const activityType = pick(pkg.specs?.activityType);
+        const duration = pick(pkg.specs?.duration);
+        const accommodation = pick(pkg.specs?.accommodation);
+        const difficulty = pkg.specs?.difficultyRating ?? 0;
+        const priceFrom = pkg.specs?.priceFrom;
+        const imageUrl = pkg.heroImage ? urlFor(pkg.heroImage).width(800).url() : "";
+        const slug = pkg.slug?.current;
+
+        return (
+          <article class="flex flex-col bg-base-100 rounded-2xl overflow-hidden border border-neutral-200 shadow-sm">
+            {imageUrl ? (
+              <div class="relative overflow-hidden">
+                <img src={imageUrl} alt={title} class="w-full h-52 object-cover" loading="lazy" />
+                <span class="absolute top-3 left-3 text-xs font-semibold uppercase tracking-wider text-secondary-800 bg-secondary-100 rounded-full px-3 py-1">
+                  {activityType}
                 </span>
               </div>
-              {card.priceFrom && (
-                <span class="font-mono text-lg font-bold text-secondary-600">{pricePrefix}€{card.priceFrom}</span>
+            ) : (
+              <div class="flex items-center justify-center h-52 bg-gradient-to-br from-primary-50 to-secondary-50">
+                <span class="text-xs uppercase tracking-widest text-secondary-700">{activityType}</span>
+              </div>
+            )}
+            <div class="flex flex-col flex-1 p-6">
+              <h3 class="font-serif text-xl font-bold text-primary-900">{title}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-neutral-600 flex-1">{summary}</p>
+              <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-neutral-500">
+                <span>{duration}</span>
+                <span>{accommodation}</span>
+              </div>
+              <div class="mt-4 flex items-center justify-between border-t border-neutral-100 pt-4">
+                <div class="flex items-center gap-1.5" title={`${pick(data?.difficulty)} ${difficulty}/${maxDifficulty}`}>
+                  <span class="text-xs text-neutral-500">{pick(data?.difficulty)}</span>
+                  <span class="flex gap-0.5">
+                    {Array.from({ length: maxDifficulty }).map((_, i) => (
+                      <span class={`h-2 w-2 rounded-full ${i < difficulty ? "bg-secondary-400" : "bg-neutral-300"}`} />
+                    ))}
+                  </span>
+                </div>
+                {priceFrom && (
+                  <span class="font-mono text-lg font-bold text-secondary-600">
+                    {pricePrefix}€{priceFrom}
+                  </span>
+                )}
+              </div>
+              {slug && (
+                <a
+                  href={`/${lang}/packages/${slug}/`}
+                  class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:text-primary-800"
+                >
+                  {lang === "de" ? "Details ansehen" : "View details"}
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                  </svg>
+                </a>
               )}
             </div>
-          </div>
-        </a>
-      ))
-    }
-  </div>
+          </article>
+        );
+      })}
+    </div>
+  )}
 </section>

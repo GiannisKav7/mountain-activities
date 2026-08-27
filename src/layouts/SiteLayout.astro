@@ -1,0 +1,38 @@
+---
+// SiteLayout is used by every page.
+// It fetches siteContent (nav/footer labels) and siteSettings (brand, address, etc.)
+// once and passes the relevant slices down to Navbar and Footer.
+import type { Lang } from "../lib/routes";
+import { fetchSiteContent, fetchSiteSettings } from "../lib/sanity";
+import BaseLayout from "./BaseLayout.astro";
+import Navbar from "../components/layout/Navbar.astro";
+import Footer from "../components/layout/Footer.astro";
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  path: string;
+  alternatePaths: Record<Lang, string>;
+}
+
+const { lang, title, description, path, alternatePaths } = Astro.props;
+
+const [siteContent, siteSettings] = await Promise.all([
+  fetchSiteContent(),
+  fetchSiteSettings(),
+]);
+---
+<BaseLayout
+  lang={lang}
+  title={title}
+  description={description}
+  path={path}
+  alternatePaths={alternatePaths}
+>
+  <Navbar lang={lang} nav={siteContent?.navigation} brand={siteSettings} />
+  <main id="main">
+    <slot />
+  </main>
+  <Footer lang={lang} footer={siteContent?.footer} brand={siteSettings} />
+</BaseLayout>

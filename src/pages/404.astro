@@ -1,0 +1,51 @@
+---
+// Custom 404 page. Astro serves this for any URL that has no matching page file.
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Navbar from "../components/layout/Navbar.astro";
+import Footer from "../components/layout/Footer.astro";
+import { fetchSiteContent, fetchSiteSettings } from "../lib/sanity";
+
+const [siteContent, siteSettings] = await Promise.all([
+  fetchSiteContent(),
+  fetchSiteSettings(),
+]);
+
+// Show the 404 in German (default language) with both language links
+const lang = "de";
+---
+<BaseLayout
+  title={`404 | ${siteSettings?.brandName ?? "OLVIOS"}`}
+  description="The page you are looking for does not exist."
+  lang={lang}
+  path="/404/"
+  alternatePaths={{ de: "/404/", en: "/404/" }}
+>
+  <Navbar lang={lang} nav={siteContent?.navigation} brand={siteSettings} />
+  <main
+    id="main"
+    class="flex min-h-[60vh] flex-col items-center justify-center px-5 py-20 text-center"
+  >
+    <p class="text-xs font-semibold uppercase tracking-widest text-secondary-600">404</p>
+    <h1 class="mt-4 font-serif text-4xl font-bold text-primary-900 md:text-5xl">
+      Seite nicht gefunden · Page not found
+    </h1>
+    <p class="mt-4 text-neutral-600 max-w-sm">
+      Die gesuchte Seite existiert nicht. · The page you are looking for does not exist.
+    </p>
+    <div class="mt-8 flex flex-wrap justify-center gap-4">
+      <a
+        href="/de/"
+        class="rounded-full bg-primary-600 px-6 py-3 text-sm font-semibold text-white hover:bg-primary-700"
+      >
+        Zur Startseite
+      </a>
+      <a
+        href="/en/"
+        class="rounded-full border border-primary-400 px-6 py-3 text-sm font-semibold text-primary-700 hover:bg-primary-50"
+      >
+        Go to homepage
+      </a>
+    </div>
+  </main>
+  <Footer lang={lang} footer={siteContent?.footer} brand={siteSettings} />
+</BaseLayout>
