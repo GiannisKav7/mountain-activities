@@ -1,15 +1,25 @@
 ---
-import { dict } from "../../i18n";
+import type { Lang } from "../../lib/routes";
+import type { SanitySiteContent } from "../../lib/sanityTypes";
 
-const { lang = "de" } = Astro.props;
-const t = dict[lang].home.welcome;
+interface Props {
+  lang?: Lang;
+  data?: SanitySiteContent["home"]["welcome"];
+}
+
+const { lang = "de", data } = Astro.props;
+
+const pick = (obj?: { de?: string; en?: string } | null): string =>
+  (obj?.[lang] ?? obj?.de) ?? "";
 ---
 <section class="max-w-3xl mx-auto text-center">
-  <span class="text-xs font-semibold uppercase tracking-widest text-secondary-600">{t.eyebrow}</span>
+  <span class="text-xs font-semibold uppercase tracking-widest text-secondary-600">
+    {pick(data?.eyebrow)}
+  </span>
   <div class="mt-3 flex items-center justify-center gap-3">
     <span class="h-px w-10 bg-gradient-to-r from-transparent to-secondary-400" aria-hidden="true"></span>
-    <h2 class="font-serif text-3xl md:text-4xl font-bold text-primary-900">{t.title}</h2>
+    <h2 class="font-serif text-3xl md:text-4xl font-bold text-primary-900">{pick(data?.title)}</h2>
     <span class="h-px w-10 bg-gradient-to-l from-transparent to-secondary-400" aria-hidden="true"></span>
   </div>
-  <p class="mt-5 text-lg leading-relaxed text-neutral-600">{t.body}</p>
+  <p class="mt-5 text-lg leading-relaxed text-neutral-600">{pick(data?.body)}</p>
 </section>

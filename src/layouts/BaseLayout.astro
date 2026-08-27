@@ -1,27 +1,56 @@
 ---
+// BaseLayout provides the <html> shell and <head> for every page.
 import "../styles/global.css";
-const { title = "Mountain Greece", description = "Mountain activities in Greece", lang = "de", path = "/" } = Astro.props;
-const base = "https://example.com"; // replace later
-const canonical = `${base}${path}`;
-const altDe = `${base}${path.replace(/^\/(en)/, "/de")}`;
-const altEn = `${base}${path.replace(/^\/(de)/, "/en")}`;
+import type { Lang } from "../lib/routes";
+
+interface Props {
+  title?: string;
+  description?: string;
+  lang?: Lang;
+  // The canonical path for this page, e.g. "/de/activities/"
+  path?: string;
+  // The path for each language version, used to build hreflang tags.
+  // Falls back to swapping the language prefix if not provided.
+  alternatePaths?: Record<Lang, string>;
+}
+
+const {
+  title = "OLVIOS Outdoor Activities",
+  description = "Outdoor travel in the Northern Peloponnese, Greece.",
+  lang = "de",
+  path = "/de/",
+  alternatePaths,
+} = Astro.props;
+
+// Inline skip-to-content label — pure UI chrome, not editorial content
+const skipLabel = lang === "de" ? "Zum Inhalt springen" : "Skip to content";
+
+// Use the configured site URL in production; fall back to the current origin in dev.
+const base = Astro.site ?? Astro.url.origin;
+const canonical = new URL(path, base);
+const altDe = new URL(alternatePaths?.de ?? path.replace(/^\/en(?=\/|$)/, "/de"), base);
+const altEn = new URL(alternatePaths?.en ?? path.replace(/^\/de(?=\/|$)/, "/en"), base);
 ---
 <!doctype html>
 <html lang={lang}>
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>{title}</title>
+    <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    <title>{title}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={canonical} />
     <link rel="alternate" hreflang="de" href={altDe} />
     <link rel="alternate" hreflang="en" href={altEn} />
-    <link rel="alternate" hreflang="x-default" href={`${base}/de/`} />
+    <link rel="alternate" hreflang="x-default" href={altDe} />
   </head>
   <body class="bg-base-100 text-base-content font-sans antialiased">
-    <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-primary-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg">
-      {lang === "de" ? "Zum Inhalt springen" : "Skip to content"}
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-primary-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg"
+    >
+      {skipLabel}
     </a>
     <slot />
   </body>

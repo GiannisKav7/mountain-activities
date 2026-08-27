@@ -1,0 +1,74 @@
+---
+// Generates all bilingual content pages from Sanity `page` documents:
+//   /de/activities/   /en/activities/
+//   /de/region/       /en/region/
+//   /de/about/        /en/about/
+//   /de/practical-information/  /en/practical-information/
+//   /de/contact/      /en/contact/
+//
+// If Sanity is not configured or returns no pages, falls back to the known
+// route slugs so the URLs still resolve (with empty content).
+import type { GetStaticPaths } from "astro";
+import type { Lang } from "../../lib/routes";
+import type { SanityPage } from "../../lib/sanityTypes";
+import { pageSlugs, pageIds, getPagePath } from "../../lib/routes";
+import { fetchPageBySlug, safeFetch, q } from "../../lib/sanity";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import ContentPage from "../../components/pages/ContentPage.astro";
+
+export const getStaticPaths = (async () => {
+  const languages: Lang[] = ["de", "en"];
+  const knownSlugs = Object.values(pageSlugs);
+
+  // Try to get slugs from Sanity; fall back to the hardcoded route map
+  const sanityPages = await safeFetch<Array<{ slug: string }>>(q.allPageSlugs) ?? [];
+  const slugs = sanityPages.length > 0
+    ? sanityPages.map((p) => p.slug)
+    : knownSlugs;
+
+  return languages.flatMap((lang) =>
+    slugs.map((slug) => ({
+      params: { lang, slug },
+      props: { lang, pageSlug: slug },
+    })),
+  );
+}) satisfies GetStaticPaths;
+
+interface Props {
+  lang: Lang;
+  pageSlug: string;
+}
+
+const { lang, pageSlug } = Astro.props;
+
+// Fetch the page content from Sanity
+const content = await fetchPageBySlug(pageSlug);
+
+const pick = (obj?: { de?: string; en?: string } | null) =>
+  (obj?.[lang] ?? obj?.de) ?? "";
+
+const seoTitle = pick(content?.seoTitle) || "OLVIOS Outdoor Activities";
+const seoDescription = pick(content?.seoDescription) || "";
+
+// Build canonical/alternate paths using the slug
+const path = `/${lang}/${pageSlug}/`;
+const alternatePaths: Record<Lang, string> = {
+  de: `/de/${pageSlug}/`,
+  en: `/en/${pageSlug}/`,
+};
+---
+
+<SiteLayout
+  lang={lang}
+  title={seoTitle}
+  description={seoDescription}
+  path={path}
+  alternatePaths={alternatePaths}
+>
+  {content
+    ? <ContentPage lang={lang} content={content} />
+    : <div class="max-w-7xl mx-auto px-5 py-24 text-center text-neutral-400">
+        {lang === "de" ? "Inhalt wird vorbereitet." : "Content is being prepared."}
+      </div>
+  }
+</SiteLayout>

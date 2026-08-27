@@ -1,9 +1,17 @@
 ---
-import { dict } from "../../i18n";
+import type { Lang } from "../../lib/routes";
+import type { SanitySiteContent } from "../../lib/sanityTypes";
+import { getPagePath } from "../../lib/routes";
 
-const { lang = "de" } = Astro.props;
-const t = dict[lang].home.hero;
-const isDe = lang === "de";
+interface Props {
+  lang?: Lang;
+  data?: SanitySiteContent["home"]["hero"];
+}
+
+const { lang = "de", data } = Astro.props;
+
+const pick = (obj?: { de?: string; en?: string } | null): string =>
+  (obj?.[lang] ?? obj?.de) ?? "";
 ---
 <section class="relative overflow-hidden bg-gradient-to-b from-primary-50 via-accent-50/60 to-base-100">
   <div class="absolute inset-0 text-secondary-300/60" aria-hidden="true">
@@ -15,35 +23,39 @@ const isDe = lang === "de";
   <div class="relative max-w-4xl mx-auto px-4 pt-20 pb-24 md:pt-28 md:pb-32 text-center">
     <span class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary-700 bg-accent-100 rounded-full px-4 py-1.5 border border-accent-200">
       <span class="inline-block h-1.5 w-1.5 rounded-full bg-secondary-500"></span>
-      {t.kicker}
+      {pick(data?.kicker)}
     </span>
-    <h1 class="mt-6 font-serif text-4xl md:text-6xl font-bold text-primary-900 leading-tight">{t.title}</h1>
-    <p class="mt-6 text-lg md:text-xl text-neutral-600 max-w-2xl mx-auto leading-relaxed">{t.subtitle}</p>
+    <h1 class="mt-6 font-serif text-4xl md:text-6xl font-bold text-primary-900 leading-tight">
+      {pick(data?.title)}
+    </h1>
+    <p class="mt-6 text-lg md:text-xl text-neutral-600 max-w-2xl mx-auto leading-relaxed">
+      {pick(data?.subtitle)}
+    </p>
     <div class="mt-9 flex flex-col sm:flex-row items-center justify-center gap-4">
       <a
-        href={isDe ? "/de/packages" : "/en/packages"}
+        href="#packages"
         class="inline-flex items-center justify-center gap-2 bg-secondary-600 text-white font-semibold rounded-full px-8 py-3.5 hover:bg-secondary-700 transition-colors shadow-md shadow-secondary-600/30"
       >
-        {t.ctaPrimary}
+        {pick(data?.ctaPrimary)}
       </a>
       <a
-        href={isDe ? "/de/contact" : "/en/contact"}
+        href={getPagePath(lang, "contact")}
         class="inline-flex items-center justify-center gap-2 border border-primary-400 text-primary-700 font-semibold rounded-full px-8 py-3.5 hover:bg-primary-50 transition-colors"
       >
-        {t.ctaSecondary}
+        {pick(data?.ctaSecondary)}
       </a>
     </div>
-    <div class="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
-      {
-        t.stats.map((s, i) => (
+    {data?.stats && data.stats.length > 0 && (
+      <div class="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+        {data.stats.map((s, i) => (
           <div class="bg-base-100 rounded-2xl shadow-sm border border-neutral-100 px-6 py-5">
             <div class={`font-mono text-3xl font-bold ${i % 3 === 0 ? "text-primary-700" : i % 3 === 1 ? "text-secondary-600" : "text-accent-600"}`}>
-              {s.value}
+              {pick(s.value)}
             </div>
-            <div class="mt-1 text-xs uppercase tracking-widest text-neutral-500">{s.label}</div>
+            <div class="mt-1 text-xs uppercase tracking-widest text-neutral-500">{pick(s.label)}</div>
           </div>
-        ))
-      }
-    </div>
+        ))}
+      </div>
+    )}
   </div>
 </section>

@@ -1,21 +1,35 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro"
-import Navbar from "../../components/layout/Navbar.astro";
-import Footer from "../../components/layout/Footer.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
 import Hero from "../../components/home/Hero.astro";
 import Gallery from "../../components/home/Gallery.astro";
 import Welcome from "../../components/home/Welcome.astro";
 import Philosophy from "../../components/home/Philosophy.astro";
 import FeaturedPackages from "../../components/home/FeaturedPackages.astro";
+import { fetchSiteContent } from "../../lib/sanity";
+
+const lang = "de";
+const siteContent = await fetchSiteContent();
+const home = siteContent?.home;
+
+const title =
+  home?.seo?.title?.de ??
+  "OLVIOS Outdoor Activities | Nördliche Peloponnes";
+const description =
+  home?.seo?.description?.de ??
+  "Persönlich geplante Outdoor-Reisen, Wanderungen und regionale Erlebnisse in der Nördlichen Peloponnes.";
 ---
-<BaseLayout lang="de" path="/de/" title="Mountain Greece — Startseite">
-  <Navbar lang="de" />
-  <main id="main" class="max-w-6xl mx-auto px-4 py-8 space-y-16">
-    <Hero lang="de" />
-    <Gallery lang="de" />
-    <Welcome lang="de" />
-    <Philosophy lang="de" />
-    <FeaturedPackages lang="de" />
-  </main>
-  <Footer lang="de" />
-</BaseLayout>
+<SiteLayout
+  lang={lang}
+  title={title}
+  description={description}
+  path="/de/"
+  alternatePaths={{ de: "/de/", en: "/en/" }}
+>
+  <div class="max-w-6xl mx-auto px-4 py-8 space-y-16">
+    <Hero lang={lang} data={home?.hero} />
+    <Gallery lang={lang} data={home?.gallery} />
+    <Welcome lang={lang} data={home?.welcome} />
+    <Philosophy lang={lang} data={home?.philosophy} />
+    <FeaturedPackages lang={lang} data={home?.packages} />
+  </div>
+</SiteLayout>

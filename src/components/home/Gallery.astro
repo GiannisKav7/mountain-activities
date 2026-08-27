@@ -1,64 +1,75 @@
 ---
-import { dict } from "../../i18n";
+import type { Lang } from "../../lib/routes";
+import type { SanitySiteContent } from "../../lib/sanityTypes";
+import { urlFor } from "../../lib/sanity";
+import { getPagePath } from "../../lib/routes";
 
-const { lang = "de" } = Astro.props;
-const t = dict[lang].home.gallery;
-const alt = t.alt;
-const caption = t.caption;
-const images = [
-  "https://picsum.photos/seed/menalo/1200/900",
-  "https://picsum.photos/seed/taygetos/800/600",
-  "https://picsum.photos/seed/leonidio/800/600",
-  "https://picsum.photos/seed/peloponnes/1600/500",
-];
-const isDe = lang === "de";
-const packagesHref = isDe ? "/de/packages" : "/en/packages";
+interface Props {
+  lang?: Lang;
+  data?: SanitySiteContent["home"]["gallery"];
+}
+
+const { lang = "de", data } = Astro.props;
+
+const pick = (obj?: { de?: string; en?: string } | null): string =>
+  (obj?.[lang] ?? obj?.de) ?? "";
+
+const images = data?.images ?? [];
+const hasImages = images.length > 0;
+
+// Gallery images link to the packages section; CTA links to the Activities page
+const packagesHref = "#packages";
+const activitiesHref = getPagePath(lang, "activities");
+
+// Build image URLs from Sanity assets
+function imageUrl(item: (typeof images)[number], width: number): string {
+  if (item.image) return urlFor(item.image).width(width).url();
+  return "";
+}
 ---
-<section class="pt-4">
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-    <a href={packagesHref} class="group relative md:col-span-2 md:row-span-2 block overflow-hidden rounded-2xl">
-      <img
-        src={images[0]}
-        alt={alt[0]}
-        class="w-full h-full object-cover aspect-[4/5] md:aspect-auto transition-transform duration-500 group-hover:scale-105"
-        loading="lazy"
-      />
-      <div class="absolute inset-0 bg-gradient-to-t from-secondary-900/80 via-secondary-900/15 to-transparent"></div>
-      <span class="absolute bottom-4 left-4 right-4 text-white font-serif text-xl md:text-2xl font-bold drop-shadow">
-        {caption}
-      </span>
-    </a>
-    <a href={packagesHref} class="group block overflow-hidden rounded-2xl">
-      <img
-        src={images[1]}
-        alt={alt[1]}
-        class="w-full h-full object-cover aspect-[4/3] transition-transform duration-500 group-hover:scale-105"
-        loading="lazy"
-      />
-    </a>
-    <a href={packagesHref} class="group block overflow-hidden rounded-2xl">
-      <img
-        src={images[2]}
-        alt={alt[2]}
-        class="w-full h-full object-cover aspect-[4/3] transition-transform duration-500 group-hover:scale-105"
-        loading="lazy"
-      />
-    </a>
-    <a href={packagesHref} class="group col-span-2 block overflow-hidden rounded-2xl">
-      <img
-        src={images[3]}
-        alt={alt[3]}
-        class="w-full h-full object-cover aspect-[16/6] md:aspect-[32/9] transition-transform duration-500 group-hover:scale-105"
-        loading="lazy"
-      />
-    </a>
-  </div>
-  <div class="flex justify-center mt-8">
-    <a
-      href={packagesHref}
-      class="inline-flex items-center justify-center gap-2 bg-secondary-600 text-white font-semibold rounded-full px-8 py-3 hover:bg-secondary-700 transition-colors shadow-md shadow-secondary-600/30"
-    >
-      {t.cta}
-    </a>
-  </div>
-</section>
+{hasImages && (
+  <section class="pt-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* First image — large, spans 2 rows on desktop, shows caption overlay */}
+      {images[0] && (
+        <a href={packagesHref} class="group relative md:col-span-2 md:row-span-2 block overflow-hidden rounded-2xl">
+          <img
+            src={imageUrl(images[0], 1200)}
+            alt={pick(images[0].alt)}
+            class="w-full h-full object-cover aspect-[4/5] md:aspect-auto transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-secondary-900/80 via-secondary-900/15 to-transparent"></div>
+          <span class="absolute bottom-4 left-4 right-4 text-white font-serif text-xl md:text-2xl font-bold drop-shadow">
+            {pick(data?.caption)}
+          </span>
+        </a>
+      )}
+      {/* Images 2 & 3 — single cells */}
+      {images[1] && (
+        <a href={packagesHref} class="group block overflow-hidden rounded-2xl">
+          <img src={imageUrl(images[1], 800)} alt={pick(images[1].alt)} class="w-full h-full object-cover aspect-[4/3] transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+        </a>
+      )}
+      {images[2] && (
+        <a href={packagesHref} class="group block overflow-hidden rounded-2xl">
+          <img src={imageUrl(images[2], 800)} alt={pick(images[2].alt)} class="w-full h-full object-cover aspect-[4/3] transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+        </a>
+      )}
+      {/* 4th image — spans 2 columns */}
+      {images[3] && (
+        <a href={packagesHref} class="group col-span-2 block overflow-hidden rounded-2xl">
+          <img src={imageUrl(images[3], 1600)} alt={pick(images[3].alt)} class="w-full h-full object-cover aspect-[16/6] md:aspect-[32/9] transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+        </a>
+      )}
+    </div>
+    <div class="flex justify-center mt-8">
+      <a
+        href={activitiesHref}
+        class="inline-flex items-center justify-center gap-2 bg-secondary-600 text-white font-semibold rounded-full px-8 py-3 hover:bg-secondary-700 transition-colors shadow-md shadow-secondary-600/30"
+      >
+        {pick(data?.cta)}
+      </a>
+    </div>
+  </section>
+)}
